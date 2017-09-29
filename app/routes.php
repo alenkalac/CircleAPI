@@ -13,8 +13,6 @@
 
     $app->get("/login", path("RouteController","login"));
 
-    $app->get("/test", path("RouteController", "getOTPTest"));
-
     $app->get("/requests/last", path("RouteController", "getLastIndex"));
 
     $app->get("/transaction/{transactionID}", path("RouteController", "transactionInfo"));
