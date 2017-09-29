@@ -1,6 +1,7 @@
 <?php 
 
     require_once "../vendor/autoload.php";
+    require_once "config.php";
 
     $app = new Silex\Application();
     $app['debug'] = true;

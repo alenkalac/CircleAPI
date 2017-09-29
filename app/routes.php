@@ -13,6 +13,12 @@
 
     $app->get("/login", path("RouteController","login"));
 
+    $app->post("/register", path("RouteController", "register"));
+
     $app->get("/requests/last", path("RouteController", "getLastIndex"));
 
     $app->get("/transaction/{transactionID}", path("RouteController", "transactionInfo"));
+
+    $app->get("/test", function(){
+        echo base64_decode("YWxlbmthbGFjOnRlc3Q=");
+    });
