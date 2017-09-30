@@ -238,7 +238,7 @@ class CircleAPI {
             "paymentRequest" => [
                 "recipientType" => $type,
                 "recipientValue" => $to,
-                "amount" => amount * 100,
+                "amount" => $amount * 100,
                 "amountCurrency" => strtoupper($currancy),
                 "message" => $message
 
@@ -248,7 +248,7 @@ class CircleAPI {
         $body = json_encode($bodyArray);
         $options = ["headers" => $headers, 'verify' => false, 'body' => $body];
 
-        $result = $this->client->request("PUT", "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests", $options);
+        $result = $this->client->request("POST", "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests", $options);
 
         if($result->getStatusCode() != "200")
             throw new Exception("Failed to authenticate using MultiFactorAuth");
