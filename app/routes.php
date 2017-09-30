@@ -11,7 +11,9 @@
         return "Home Page";
     });
 
-    $app->get("/login", path("RouteController","login"));
+    $app->get("/circle/login", path("RouteController","circleLogin"));
+
+    $app->post("login", path("RouteController","login"));
 
     $app->post("/register", path("RouteController", "register"));
 
