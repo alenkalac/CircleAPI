@@ -88,17 +88,12 @@ class CircleAPI {
      *      Data that is returned by the server
      */
     public function login($autoMFA = false) {
-        $headers = [
-            "Content-Type" => "application/json",
-            "x-app-id" => "angularjs",
-        ];
-
         $body = json_encode([
             "email" => $this->email, 
             "password" => $this->password
         ]);
         
-        $options = ["headers" => $headers, 'verify' => false, 'body' => $body];
+        $options = ["headers" => $this->getHeaders("POST", false), 'verify' => false, 'body' => $body];
 
         $result = $this->client->request("POST", "/api/v2/customers/0/sessions", $options);
 
@@ -146,12 +141,6 @@ class CircleAPI {
      *      Returns the server response body.
      */
     public function mfaAuthenticate($trusted = true) {
-        $headers = [
-            "Content-Type" => "application/json",
-            "x-customer-session-token" => $this->token,
-            "x-customer-id" => $this->userID,
-        ];
-
         $pin = $this->getOTP($this->label, $this->secret);
 
         $bodyArray = [
@@ -161,7 +150,7 @@ class CircleAPI {
         ];
 
         $body = json_encode($bodyArray);
-        $options = ["headers" => $headers, 'verify' => false, 'body' => $body];
+        $options = ["headers" => $this->getHeaders("PUT"), 'verify' => false, 'body' => $body];
 
         $result = $this->client->request("PUT", "/api/v2/customers/{$this->userID}/mfa", $options);
 
@@ -181,13 +170,7 @@ class CircleAPI {
      * @return void
      */
     public function logout() {
-        $headers = [
-            "Content-Type" => "application/json",
-            "x-customer-session-token" => $this->token,
-            "x-customer-id" => $this->userID,
-        ];
-
-        $options = ["headers" => $headers, 'verify' => false];
+        $options = ["headers" => $this->getHeaders("DELETE"), 'verify' => false];
 
         $result = $this->client->request("DELETE", "/api/v2/customers/0/sessions", $options);
     }
@@ -199,12 +182,7 @@ class CircleAPI {
      *      Returns an array of all the account information. 
      */
     public function poll() {
-        $headers = [
-            "x-customer-session-token" => $this->token,
-            "x-customer-id" => $this->userID,
-        ];
-
-        $options = ["headers" => $headers, 'verify' => false];
+        $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
 
         $result = $this->client->request("GET", "/api/v2/customers/{$this->getUserID()}?polling=true", $options);
 
@@ -222,12 +200,8 @@ class CircleAPI {
      * @param [type] $message
      * @return void
      */
-    public function requestTransaction($to, $amount, $currancy, $message) {
-        $headers = [
-            "Content-Type" => "application/json",
-            "x-customer-session-token" => $this->token,
-            "x-customer-id" => $this->userID,
-        ];
+    public function requestCash($to, $amount, $currancy, $message) {
+        $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests";
 
         if(filter_var($to, FILTER_VALIDATE_EMAIL))
             $type = "email";
@@ -246,9 +220,9 @@ class CircleAPI {
         ];
 
         $body = json_encode($bodyArray);
-        $options = ["headers" => $headers, 'verify' => false, 'body' => $body];
+        $options = ["headers" => $this->getHeaders("POST"), 'verify' => false, 'body' => $body];
 
-        $result = $this->client->request("POST", "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests", $options);
+        $result = $this->client->request("POST", $url, $options);
 
         if($result->getStatusCode() != "200")
             throw new Exception("Failed to authenticate using MultiFactorAuth");
@@ -259,7 +233,36 @@ class CircleAPI {
         
     }
 
+    public function sendCash($to, $fromCurrency, $toCurrency, $amount, $message) {
+        $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/spends";
+    }
 
+    public function convertCurrency($from, $to, $amount) {
+        $amount = $amount * 100;
+
+        $url = "/api/v4/customers/{$this->getUserID()}/quote/{$from}/{$to}/{$from}/{$amount}";
+        $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
+        $result = $this->client->request("GET", $url, $options);
+        $data = json_decode($result->getBody()->getContents());
+        
+        return $data;
+    }
+
+    private function getHeaders($method, $withToken = true) {
+        $header = [ 
+            "x-app-id" => "angularjs",
+        ];
+        if(strtoupper($method) != "GET") {
+            $header["Content-Type"] = "application/json";
+        }
+        if($withToken) {
+            $header["x-customer-session-token"] = $this->token;
+            $header["x-customer-id"] = $this->userID;
+        }
+
+        return $header;
+       
+    }
 
     //GETTERS/SETTERS
     public function getToken() {
@@ -273,8 +276,5 @@ class CircleAPI {
     public function getAccountID() {
         return $this->accountID;
     }
-
-
-
 }
 ?>
