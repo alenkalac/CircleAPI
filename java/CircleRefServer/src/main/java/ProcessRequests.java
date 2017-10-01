@@ -5,9 +5,9 @@ public class ProcessRequests implements Runnable {
 
     private List<Request> requests;
 
-    public ProcessRequests() {
+    public ProcessRequests(){
         System.out.println("STARTING PROCESS REQUESTS SERVICE  ");
-        requests = new ArrayList<>();
+        requests = new ArrayList<Request>();
     }
 
     public void addRequest(Request request) {
@@ -22,7 +22,6 @@ public class ProcessRequests implements Runnable {
         }
     }
 
-    @Override
     public void run() {
         while(true) {
             for(Request r : requests) {

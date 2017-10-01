@@ -5,9 +5,10 @@ public class Request extends Thread {
     private String owner;
     private boolean isComplete;
 
-    public Request(String transactionID, String token, String owner) {
+    private static final Object lock = new Object();
+
+    public Request(String transactionID, String owner) {
         this.transactionID = transactionID;
-        this.token = token;
         this.owner = owner;
         this.isComplete = false;
     }
@@ -46,7 +47,11 @@ public class Request extends Thread {
 
     @Override
     public void run() {
-        //CHECK REQUEST FOR COMPLETE
+        synchronized (lock) {
+            //call transaction/{transactionID}
+
+            //
+        }
 
         this.sleep(5000);
     }
