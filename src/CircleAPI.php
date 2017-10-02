@@ -16,6 +16,12 @@ class CapiCurrency {
     const GBP = "GBP";
     const EUR = "EUR";
     const BTC = "BTC";
+
+    public static function getCurrencySign($currency) {
+        if($currancy == \capi\CapiCurrency::USD) return "$";
+        else if($currancy == \capi\CapiCurrency::EUR) return "€";
+        else if($currancy == \capi\CapiCurrency::GBP) return "£";
+    }
 }
 
 /**
@@ -31,6 +37,7 @@ class CircleAPI {
     private $token = null;
     private $userID = null;
     private $accountID = null;
+    private $currency = "USD"; //default
 
     private static $instance = null;
 
@@ -168,6 +175,9 @@ class CircleAPI {
 
         $this->accountID = $data->response->customer->accounts[0]->id;
 
+        $accountCurrency = $data->response->customer->baseCurrencyCode;
+        $this->setCurrency($accountCurrency);
+
         return $data;
     }
 
@@ -180,6 +190,26 @@ class CircleAPI {
         $options = ["headers" => $this->getHeaders("DELETE"), 'verify' => false];
 
         $result = $this->client->request("DELETE", "/api/v2/customers/0/sessions", $options);
+    }
+
+    /**
+     * Sets the currancy to work with, this is account specific and can only be changed from the settings 
+     * page on circle.com using the converter.
+     *
+     * @param string $currency default USD, available options USD/EUR/BTC
+     * @return void
+     */
+    public function setCurrency($currency) {
+        $this->currency = $currency;
+    }
+
+    /**
+     * Getter for currency
+     *
+     * @return string
+     */
+    public function getCurrency() {
+        return $this->currency;
     }
 
     /**
@@ -198,6 +228,13 @@ class CircleAPI {
         return $data;
     }
 
+    /**
+     * Figures out the recipient type, phone or email
+     *
+     * @param string $to
+     *      A user you want to send/request money to/from.
+     * @return string email or phone depending on the input
+     */
     private function getRecipientType($to) {
         if(filter_var($to, FILTER_VALIDATE_EMAIL))
             $type = "email";
@@ -206,23 +243,40 @@ class CircleAPI {
         return $type;
     }
 
+    public function getAvailableBalance() {
+        $data = $this->poll();
+
+        $balance = $data->response->customer->accounts[0]->availableBalance;
+        $balance = $balance / 100;
+        $balance = round($balance, 2);
+
+        return $balance;
+    }
+
     /**
-     * Undocumented function
+     * Request money from anyone using their phone number or email address. 
      *
-     * @param [type] $to
-     * @param [type] $amount
-     * @param [type] $currancy
-     * @param [type] $message
-     * @return void
+     * @param string $from
+     *      From whom to request money from. eg: +353xxxxxxxx or someone@something.com
+     * @param double $amount
+     *      Float value amount to request, eg: 1.20
+     * @param string $currancy
+     *      Currancy to request, USD/EUR/BTC
+     * @param string $message
+     *      Message to send with the request
+     * @return array
      */
-    public function requestCash($to, $amount, $currancy, $message) {
+    public function requestCash($from, $amount, $currancy, $message = "") {
+
+        $amount = round($amount, 2);
+        $amount = $amount * 100;
         $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests";
 
         $bodyArray = [
             "paymentRequest" => [
-                "recipientType" => $this->getRecipientType($to),
-                "recipientValue" => $to,
-                "amount" => $amount * 100,
+                "recipientType" => $this->getRecipientType($from),
+                "recipientValue" => $from,
+                "amount" => $amount,
                 "amountCurrency" => strtoupper($currancy),
                 "message" => $message
 
@@ -240,13 +294,23 @@ class CircleAPI {
         $data = json_decode($result->getBody()->getContents());
 
         return $data;
-        
     }
 
-    public function sendCash($to, $fromCurrency, $toCurrency, $amount, $message = "") {
+    /**
+     * Send Cash from your account to another user using a phone number or email address of the recipient
+     *
+     * @param string $to
+     * @param string $toCurrency
+     * @param float $amount
+     * @param string $message
+     * @return array response
+     */
+    public function sendCash($to, $toCurrency, $amount, $message = "") {
         $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/spends";
 
-        $exchangeData = $this->convertCurrency($fromCurrency, $toCurrency, $amount);
+        $amount = $this->formatMoney($amount);
+
+        $exchangeData = $this->convertCurrency($this->getCurrency(), $toCurrency, $amount);
 
         $rate = $exchangeData->response->quote->rate;
         $amount = $exchangeData->response->quote->amount;
@@ -256,12 +320,12 @@ class CircleAPI {
             "spend" => [
                 "message" => $message, 
                 "quote" => [
-                    "fromCurrency" => $fromCurrency,
+                    "fromCurrency" => $this->getCurrency(),
                     "toCurrency" => $toCurrency,
                     "rate" => $rate,
                     "amount" => $amount,
                     "amountCurrency" => $toCurrency,
-                    "determinedAmountCurrency" => $fromCurrency,
+                    "determinedAmountCurrency" => $this->getCurrency(),
                     "determinedAmount" => $dAmount, 
                     "ttl" => 300000,
                 ],
@@ -278,11 +342,37 @@ class CircleAPI {
 
         $data = json_decode($result->getBody()->getContents());
 
-        //TODO: save transaction to database
+        return $data;
+    }
+
+    /**
+     * Gets the transaction details
+     *
+     * @param string $transactionID
+     * @return array
+     */
+    public function getTransactionDetails($transactionID) {
+        $url = "/api/v4/customers/{$this->getUserID()}/activities/{$transactionID}";
+
+        $options = $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
+
+        $result = $this->client->request("GET", $url, $options);
+        $data = json_decode($result->getBody()->getContents());
         
         return $data;
     }
 
+    /**
+     * Converts an amount between two currencies
+     *
+     * @param string $from 
+     *      From currency, USD/EUR/BTC
+     * @param string $to
+     *      To currency, USD/EUR/BTC
+     * @param float $amount
+     *      Amount to convert
+     * @return array response
+     */
     public function convertCurrency($from, $to, $amount) {
         $amount = $amount * 100;
 
@@ -294,6 +384,15 @@ class CircleAPI {
         return $data;
     }
 
+    /**
+     * Reusable helper function that returns the header for this to work. 
+     * 
+     * @param string $method
+     * @param boolean $withToken
+     *      default set to true, it will provide the login token,
+     *      if set to false it will leave out the access token, only used for login step.
+     * @return array
+     */
     private function getHeaders($method, $withToken = true) {
         $header = [ 
             "x-app-id" => "angularjs",
@@ -307,6 +406,19 @@ class CircleAPI {
         }
 
         return $header;
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @param [type] $amount
+     * @return void
+     */
+    private function formatMoney($amount) {
+        $amount = round($amount, 2);
+        $amount * 100; //Circle uses cents as value, $2.50 = 250c
+
+        return $amount;
     }
 
     //GETTERS/SETTERS
