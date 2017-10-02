@@ -56,7 +56,7 @@ class CircleAPI {
 
         $this->client = new Client([
             'base_uri' => 'https://api.circle.com/',
-            'timeout'  => 5.0,
+            'timeout'  => 10.0,
         ]);
     }
 
@@ -277,6 +277,8 @@ class CircleAPI {
         $result = $this->client->request("POST", $url, $options);
 
         $data = json_decode($result->getBody()->getContents());
+
+        //TODO: save transaction to database
         
         return $data;
     }
