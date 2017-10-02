@@ -11,6 +11,13 @@ namespace capi;
 use GuzzleHttp\Client;
 use OTPHP\TOTP;
 
+class CapiCurrency {
+    const USD = "USD";
+    const GBP = "GBP";
+    const EUR = "EUR";
+    const BTC = "BTC";
+}
+
 /**
  * Undocumented class
  */
@@ -49,7 +56,7 @@ class CircleAPI {
 
         $this->client = new Client([
             'base_uri' => 'https://api.circle.com/',
-            'timeout'  => 2.0,
+            'timeout'  => 5.0,
         ]);
     }
 
@@ -191,6 +198,14 @@ class CircleAPI {
         return $data;
     }
 
+    private function getRecipientType($to) {
+        if(filter_var($to, FILTER_VALIDATE_EMAIL))
+            $type = "email";
+        else 
+            $type = "phone";
+        return $type;
+    }
+
     /**
      * Undocumented function
      *
@@ -203,14 +218,9 @@ class CircleAPI {
     public function requestCash($to, $amount, $currancy, $message) {
         $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/requests";
 
-        if(filter_var($to, FILTER_VALIDATE_EMAIL))
-            $type = "email";
-        else 
-            $type = "phone";
-
         $bodyArray = [
             "paymentRequest" => [
-                "recipientType" => $type,
+                "recipientType" => $this->getRecipientType($to),
                 "recipientValue" => $to,
                 "amount" => $amount * 100,
                 "amountCurrency" => strtoupper($currancy),
@@ -233,14 +243,48 @@ class CircleAPI {
         
     }
 
-    public function sendCash($to, $fromCurrency, $toCurrency, $amount, $message) {
+    public function sendCash($to, $fromCurrency, $toCurrency, $amount, $message = "") {
         $url = "/api/v4/customers/{$this->getUserID()}/accounts/{$this->getAccountID()}/spends";
+
+        $exchangeData = $this->convertCurrency($fromCurrency, $toCurrency, $amount);
+
+        $rate = $exchangeData->response->quote->rate;
+        $amount = $exchangeData->response->quote->amount;
+        $dAmount = $exchangeData->response->quote->determinedAmount;
+        
+        $bodyArray = [
+            "spend" => [
+                "message" => $message, 
+                "quote" => [
+                    "fromCurrency" => $fromCurrency,
+                    "toCurrency" => $toCurrency,
+                    "rate" => $rate,
+                    "amount" => $amount,
+                    "amountCurrency" => $toCurrency,
+                    "determinedAmountCurrency" => $fromCurrency,
+                    "determinedAmount" => $dAmount, 
+                    "ttl" => 300000,
+                ],
+                "recipientValue" => $to,
+                "recipientType" => $this->getRecipientType($to)
+            ]
+        ];
+
+        $body = json_encode($bodyArray);
+
+        $options = ["headers" => $this->getHeaders("POST"), 'verify' => false, 'body' => $body];
+        
+        $result = $this->client->request("POST", $url, $options);
+
+        $data = json_decode($result->getBody()->getContents());
+        
+        return $data;
     }
 
     public function convertCurrency($from, $to, $amount) {
         $amount = $amount * 100;
 
-        $url = "/api/v4/customers/{$this->getUserID()}/quote/{$from}/{$to}/{$from}/{$amount}";
+        $url = "/api/v4/customers/{$this->getUserID()}/quote/{$from}/{$to}/{$to}/{$amount}";
         $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
         $result = $this->client->request("GET", $url, $options);
         $data = json_decode($result->getBody()->getContents());
@@ -261,7 +305,6 @@ class CircleAPI {
         }
 
         return $header;
-       
     }
 
     //GETTERS/SETTERS
