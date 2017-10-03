@@ -1,8 +1,4 @@
 <?php 
-    use GuzzleHttp\Client;
-    use GuzzleHttp\Psr7\Request;
-    use GuzzleHttp\Cookie\FileCookieJar;
-
     function path($className, $functionName) {
 		return "capi\controller\\$className::$functionName";
     }
@@ -11,7 +7,7 @@
         return "Home Page";
     });
 
-    $app->get("/circle/login", path("RouteController","circleLogin"));
+    $app->post("/circle/login", path("RouteController","circleLogin"));
 
     $app->post("login", path("RouteController","login"));
 
@@ -19,8 +15,10 @@
 
     $app->get("/requests/last", path("RouteController", "getLastIndex"));
 
-    $app->get("/transaction/{transactionID}", path("RouteController", "transactionInfo"));
+    $app->get("/request/transaction", path("RouteController", "requestTransaction"));
 
-    $app->get("/test", function(){
-        echo base64_decode("YWxlbmthbGFjOnRlc3Q=");
-    });
+    $app->get("/transaction/{tid}", path("RouteController", "processTransaction"));
+    
+    $app->get("/fetch/requests", path("RouteController", "fetchTransactions"));
+
+    $app->get("/test", path("RouteController", "test"));
