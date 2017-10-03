@@ -1,16 +1,17 @@
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ProcessRequests implements Runnable {
 
-    private List<Request> requests;
+    private List<RequestTransaction> requests;
 
     public ProcessRequests(){
         System.out.println("STARTING PROCESS REQUESTS SERVICE  ");
-        requests = new ArrayList<Request>();
+        requests = new ArrayList<RequestTransaction>();
     }
 
-    public void addRequest(Request request) {
+    public void addRequest(RequestTransaction request) {
         requests.add(request);
     }
 
@@ -23,11 +24,14 @@ public class ProcessRequests implements Runnable {
     }
 
     public void run() {
+
+
         while(true) {
-            for(Request r : requests) {
+            for(Iterator<RequestTransaction> iterator = requests.iterator(); iterator.hasNext();) {
+                RequestTransaction r = iterator.next();
                 if(!r.isAlive())
                     r.start();
-                requests.remove(r);
+                iterator.remove();
             }
             this.sleep(5000);
         }
