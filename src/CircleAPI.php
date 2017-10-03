@@ -315,8 +315,11 @@ class CircleAPI {
         $rate = $exchangeData->response->quote->rate;
         $amount = $exchangeData->response->quote->amount;
         $dAmount = $exchangeData->response->quote->determinedAmount;
+
+        $pin = $this->getOTP($this->label, $this->secret);
         
         $bodyArray = [
+            "mfaPin" => $pin,
             "spend" => [
                 "message" => $message, 
                 "quote" => [
