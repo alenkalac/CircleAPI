@@ -17,8 +17,12 @@
 
     $app->get("/request/transaction", path("RouteController", "requestTransaction"));
 
-    $app->get("/transaction/{tid}", path("RouteController", "processTransaction"));
+    $app->post("/transaction", path("RouteController", "processTransaction"));
     
     $app->get("/fetch/requests", path("RouteController", "fetchTransactions"));
 
     $app->get("/test", path("RouteController", "test"));
+
+    $app->get("/test2", path("RouteController", "test2"));
+
+    $app->get("/session", path("RouteController", "session"));
