@@ -9,6 +9,7 @@
 namespace capi;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use OTPHP\TOTP;
 
 class CapiCurrency {
@@ -221,11 +222,22 @@ class CircleAPI {
     public function poll() {
         $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
 
-        $result = $this->client->request("GET", "/api/v2/customers/{$this->getUserID()}?polling=true", $options);
+        try {
+            $result = $this->client->request("GET", "/api/v2/customers/{$this->getUserID()}?polling=true", $options);
 
-        $data = json_decode($result->getBody()->getContents());
+            $data = json_decode($result->getBody()->getContents());
 
-        return $data;
+            return $data;
+        }catch(ClientException $ex) {
+            return false;
+        }
+        
+    }
+
+    public function validateToken() {
+        $data = $this->poll();
+        if($data == false) return false;
+        return $data->response->status->code == 0;
     }
 
     /**
@@ -422,6 +434,18 @@ class CircleAPI {
         $amount * 100; //Circle uses cents as value, $2.50 = 250c
 
         return $amount;
+    }
+
+    public function setToken($token) {
+        $this->token = $token;
+    }
+
+    public function setAccountID($accountId) {
+        $this->accountID = $accountId;
+    }
+
+    public function setUserID($userid) {
+        $this->userID = $userid;
     }
 
     //GETTERS/SETTERS
