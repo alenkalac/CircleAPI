@@ -5,6 +5,8 @@ public class Transaction
 
     private String error;
 
+    private String data;
+
     public String getMessage ()
     {
         return message;
@@ -25,9 +27,19 @@ public class Transaction
         this.error = error;
     }
 
+    public String getData ()
+    {
+        return data;
+    }
+
+    public void setData (String data)
+    {
+        this.data = data;
+    }
+
     @Override
     public String toString()
     {
-        return "ClassPojo [message = "+message+", error = "+error+"]";
+        return "ClassPojo [message = "+message+", error = "+error+", data = "+data+"]";
     }
 }
