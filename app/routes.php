@@ -19,7 +19,7 @@
 
     $app->post("/transaction", path("RouteController", "processTransaction"));
     
-    $app->get("/fetch/requests", path("RouteController", "fetchTransactions"));
+    $app->post("/fetch/requests", path("RouteController", "fetchTransactions"));
 
     $app->get("/test", path("RouteController", "test"));
 

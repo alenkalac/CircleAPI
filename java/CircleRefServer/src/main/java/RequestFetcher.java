@@ -1,7 +1,5 @@
 import com.google.gson.Gson;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 
 import java.io.IOException;
 
@@ -55,7 +53,14 @@ public class RequestFetcher implements Runnable {
     }
 
     private void doFetch() {
-        Request request = new Request.Builder().url("http://localhost/fetch/requests").build();
+        RequestBody body = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("last_id", String.valueOf(this.lastID))
+                .build();
+
+        Request request = new Request.Builder().url("http://localhost/fetch/requests").post(body).build();
+
+        System.out.println("FETCHING WITH LAST_ID " + this.lastID );
 
         try {
             Response response = client.newCall(request).execute();
@@ -65,6 +70,10 @@ public class RequestFetcher implements Runnable {
             FetchResponse[] res = new Gson().fromJson(data, FetchResponse[].class);
 
             for(FetchResponse r : res ) {
+                System.out.println("FETCHED=== " + r.getTransaction_id());
+                int currentID = Integer.parseInt(r.getId());
+                if(currentID > this.lastID)
+                    this.lastID = currentID;
                 pRequsts.addRequest(new RequestTransaction(r));
             }
 
