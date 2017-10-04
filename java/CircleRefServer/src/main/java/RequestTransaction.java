@@ -1,5 +1,7 @@
 import com.google.gson.Gson;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
@@ -26,16 +28,26 @@ public class RequestTransaction extends Thread {
     }
 
     private void checkTransaction() {
-        String url = "http://localhost/transaction/" + transaction.getTransaction_id();
-        okhttp3.Request req = new okhttp3.Request.Builder().url(url).build();
+        String url = "http://localhost/transaction";
+        RequestBody body = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("tid", transaction.getTransaction_id())
+                .addFormDataPart("token", RequestFetcher.token)
+                .addFormDataPart("user_id", RequestFetcher.userID)
+                .addFormDataPart("account_id", RequestFetcher.accountID)
+                .build();
+
+        okhttp3.Request req = new okhttp3.Request.Builder().url(url).post(body).build();
 
         try {
             Response response = client.newCall(req).execute();
 
             Transaction tResponse = new Gson().fromJson(response.body().string(), Transaction.class);
-            //System.out.println(tResponse);
+            System.out.println(tResponse);
+            RequestFetcher.token = tResponse.getData();
+
             if(tResponse.getError().equals("denied") || tResponse.getError().equals("canceled")) {
-                this.
+                //this.
             }
 
 
@@ -46,6 +58,7 @@ public class RequestTransaction extends Thread {
 
     @Override
     public void run() {
+        //while loop
         synchronized (lock) {
             checkTransaction();
         }
