@@ -399,6 +399,29 @@ class CircleAPI {
         return $data;
     }
 
+    public function getTransactionList($count) {
+        $url = "/api/v4/customers/{$this->getUserID()}/transactions?size={$count}";
+
+        $options = ["headers" => $this->getHeaders("GET"), 'verify' => false];
+        $result = $this->client->request("GET", $url, $options);
+        $data = json_decode($result->getBody()->getContents());
+        
+        return $data->response->transactions;
+    }
+
+    public function getSpentTransactionList() {
+        $list = $this->getTransactionList(100);
+        $spentList = [];
+
+        foreach($list as $transaction) {
+            if($transaction->activity == "spend")
+                array_push($spentList, $transaction);
+        }
+
+        return $spentList;
+
+    }
+
     /**
      * Reusable helper function that returns the header for this to work. 
      * 
