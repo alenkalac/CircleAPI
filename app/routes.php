@@ -15,7 +15,9 @@
 
     $app->get("/requests/last", path("RouteController", "getLastIndex"));
 
-    $app->get("/request/transaction", path("RouteController", "requestTransaction"));
+    $app->get("/request/transaction/{value}", path("RouteController", "requestTransaction"));
+
+    $app->post("/request/transaction", path("RouteController", "requestTransaction"));
 
     $app->post("/transaction", path("RouteController", "processTransaction"));
     
