@@ -28,6 +28,22 @@ public class RequestTransaction extends Thread {
         }
     }
 
+    private void requestAnotherTransaction() {
+        System.out.println("REQUESTING ANOTHER TRANSACTION");
+        String url = "http://localhost/request/transaction";
+        RequestBody body = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("tid", transaction.getTransaction_id())
+                .build();
+
+        okhttp3.Request req = new okhttp3.Request.Builder().url(url).post(body).build();
+        try {
+            Response response = client.newCall(req).execute();
+        }catch (IOException e) {
+
+        }
+    }
+
     private void checkTransaction() {
         String url = "http://localhost/transaction";
         RequestBody body = new MultipartBody.Builder()
@@ -49,6 +65,9 @@ public class RequestTransaction extends Thread {
 
             if(!tResponse.getError().equals("pending")) {
                 this.running = false;
+            }
+            if(tResponse.getMessage().equals("request")) {
+                this.requestAnotherTransaction();
             }
 
 
