@@ -12,7 +12,7 @@ public class RequestTransaction extends Thread {
 
     private FetchResponse transaction;
     private OkHttpClient client;
-    private boolean finish = false;
+    private boolean running = true;
 
     public RequestTransaction(FetchResponse transaction) {
         this.transaction = transaction;
@@ -48,7 +48,7 @@ public class RequestTransaction extends Thread {
             RequestFetcher.token = tResponse.getData();
 
             if(!tResponse.getError().equals("pending")) {
-                this.finish = true;
+                this.running = false;
             }
 
 
@@ -59,7 +59,7 @@ public class RequestTransaction extends Thread {
 
     @Override
     public void run() {
-       while(finish == false) {
+       while(running) {
            synchronized (lock) {
                checkTransaction();
            }
