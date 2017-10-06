@@ -1,5 +1,6 @@
+package model;
 
-public class Transaction
+public class TransactionResponse
 {
     private String message;
 

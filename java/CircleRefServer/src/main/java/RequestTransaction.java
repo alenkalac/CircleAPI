@@ -1,4 +1,6 @@
 import com.google.gson.Gson;
+import model.FetchResponse;
+import model.TransactionResponse;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -59,7 +61,7 @@ public class RequestTransaction extends Thread {
         try {
             Response response = client.newCall(req).execute();
 
-            Transaction tResponse = new Gson().fromJson(response.body().string(), Transaction.class);
+            TransactionResponse tResponse = new Gson().fromJson(response.body().string(), TransactionResponse.class);
             System.out.println(tResponse);
             RequestFetcher.token = tResponse.getData();
 

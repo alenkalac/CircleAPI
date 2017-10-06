@@ -1,5 +1,6 @@
+package model;
 
-public class Session
+public class SessionResponse
 {
     private String token;
 

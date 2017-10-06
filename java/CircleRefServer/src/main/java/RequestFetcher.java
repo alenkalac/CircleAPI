@@ -1,4 +1,6 @@
 import com.google.gson.Gson;
+import model.FetchResponse;
+import model.SessionResponse;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -39,7 +41,7 @@ public class RequestFetcher implements Runnable {
             Response response = client.newCall(request).execute();
             String data = response.body().string();
 
-            Session session = new Gson().fromJson(data, Session.class);
+            SessionResponse session = new Gson().fromJson(data, SessionResponse.class);
 
             RequestFetcher.token = session.getToken();
             RequestFetcher.userID = session.getUser();
@@ -48,7 +50,7 @@ public class RequestFetcher implements Runnable {
             System.out.println("SETTING TOKEN TO " + token);
 
         }catch(IOException e) {
-            e.printStackTrace();
+           init();
         }
     }
 
@@ -78,7 +80,7 @@ public class RequestFetcher implements Runnable {
             }
 
         }catch(IOException e) {
-            e.printStackTrace();
+            doFetch();
         }
     }
 
