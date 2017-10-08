@@ -23,7 +23,7 @@
     
     $app->post("/fetch/requests", path("RouteController", "fetchTransactions"));
 
-    $app->get("/test", path("RouteController", "test"));
+    $app->post("/test", path("RouteController", "test"));
 
     $app->get("/test2", path("RouteController", "test2"));
 

@@ -38,9 +38,17 @@ public class RequestTransaction extends Thread {
                 .addFormDataPart("tid", transaction.getTransaction_id())
                 .build();
 
-        okhttp3.Request req = new okhttp3.Request.Builder().url(url).post(body).build();
+        okhttp3.Request req = new okhttp3.Request.Builder()
+                .url(url)
+                .header("app-token", RequestFetcher.auth_token)
+                .post(body)
+                .build();
         try {
             Response response = client.newCall(req).execute();
+            if(response.code() == 401) {
+                RequestFetcher.login();
+                requestAnotherTransaction();
+            }
         }catch (IOException e) {
 
         }
@@ -56,10 +64,18 @@ public class RequestTransaction extends Thread {
                 .addFormDataPart("account_id", RequestFetcher.accountID)
                 .build();
 
-        okhttp3.Request req = new okhttp3.Request.Builder().url(url).post(body).build();
+        okhttp3.Request req = new okhttp3.Request.Builder()
+                .header("app-token", RequestFetcher.auth_token)
+                .url(url)
+                .post(body)
+                .build();
 
         try {
             Response response = client.newCall(req).execute();
+            if(response.code() == 401) {
+                RequestFetcher.login();
+                return;
+            }
 
             TransactionResponse tResponse = new Gson().fromJson(response.body().string(), TransactionResponse.class);
             System.out.println(tResponse);
