@@ -162,8 +162,6 @@ class RouteController {
         $invalid_permission = $app->json(["error" => "NOT_ALLOWED"], 401);
 
         //validate user
-        //$auth_token = "387313f22b692faf6c8fa2fb896d7110";
-
         $allowed = $this->auth_user($r, $app);
         if($allowed == false) 
             return $invalid_permission;
